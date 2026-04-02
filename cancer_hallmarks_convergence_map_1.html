@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cancer Hallmarks Mechanistic Convergence Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0B1628;
+    --navy2: #111e35;
+    --navy3: #162340;
+    --gold: #C9A84C;
+    --gold-lt: #e8cc82;
+    --text-primary: #F0EDE6;
+    --text-secondary: #9BA8BB;
+    --text-muted: #5C6B80;
+    --border: rgba(255,255,255,0.08);
+    --purple: #8B5CF6;
+    --purple-dk: #6D28D9;
+    --red: #EF4444;
+    --red-dk: #B91C1C;
+    --green: #10B981;
+    --green-dk: #047857;
+    --blue: #3B82F6;
+    --blue-dk: #1D4ED8;
+    --orange: #F59E0B;
+    --orange-dk: #B45309;
+    --yellow: #EAB308;
+    --yellow-dk: #A16207;
+  }
+
+  html, body {
+    background: var(--navy);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  .page {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 40px 32px 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+  }
+
+  .header-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  .header h1 span { color: var(--gold); }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── DRUG FILTER BAR ── */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .filter-bar-label {
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .drug-btn {
+    background: var(--navy3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    letter-spacing: 0.02em;
+  }
+
+  .drug-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold-lt);
+    background: rgba(201,168,76,0.08);
+  }
+
+  .drug-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  .drug-btn.reset-btn {
+    border-color: var(--text-muted);
+    color: var(--text-muted);
+  }
+  .drug-btn.reset-btn:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* ── MAP AREA ── */
+  .map-wrap {
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px 20px;
+    position: relative;
+  }
+
+  svg#metro {
+    display: block;
+    width: 100%;
+    overflow: visible;
+  }
+
+  /* Node styles */
+  .nd {
+    transition: opacity 0.25s ease, filter 0.25s ease;
+  }
+
+  .nd rect {
+    transition: filter 0.2s;
+  }
+
+  .nd:hover rect {
+    filter: brightness(1.18);
+    cursor: pointer;
+  }
+
+  .nd.dimmed {
+    opacity: 0.15;
+  }
+
+  .nd.highlighted rect {
+    filter: brightness(1.3) drop-shadow(0 0 8px currentColor);
+    stroke: var(--gold-lt);
+    stroke-width: 1.5px;
+  }
+
+  /* Text */
+  .nt { font-size: 10px; font-weight: 600; fill: rgba(255,255,255,0.95); dominant-baseline: central; text-anchor: middle; font-family: 'DM Sans', sans-serif; }
+  .nd2 { font-size: 8.5px; font-weight: 400; fill: rgba(255,255,255,0.78); dominant-baseline: central; text-anchor: middle; font-family: 'DM Sans', sans-serif; }
+  .lbl { font-size: 9px; font-weight: 400; fill: #9BA8BB; dominant-baseline: central; font-family: 'DM Sans', sans-serif; }
+  .jxn-lbl { font-size: 8px; fill: #5C6B80; text-anchor: middle; dominant-baseline: central; font-family: 'DM Sans', sans-serif; }
+  .section-lbl { font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; dominant-baseline: central; font-family: 'DM Sans', sans-serif; }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .legend-swatch {
+    width: 22px;
+    height: 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .legend-dashed {
+    width: 22px;
+    height: 0;
+    border-top: 2px dashed #5C6B80;
+    flex-shrink: 0;
+  }
+
+  /* ── TOOLTIP ── */
+  .tooltip {
+    position: fixed;
+    background: var(--navy3);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text-primary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    max-width: 220px;
+    z-index: 100;
+    line-height: 1.5;
+  }
+
+  .tooltip.show { opacity: 1; }
+  .tooltip strong { color: var(--gold-lt); display: block; margin-bottom: 4px; font-size: 12px; }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+    line-height: 1.6;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff; color: #111; }
+    .page { padding: 20px; }
+    .filter-bar, .tooltip { display: none; }
+    .map-wrap { border: 1px solid #ccc; background: #f9f9f9; }
+    .header h1 { color: #0B1628; }
+    .header-eyebrow { color: #C9A84C; }
+    svg text { fill: #111 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">Integrative Oncology · Drug Repurposing</div>
+    <h1>Repurposed Drugs Targeting the <span>Hallmarks of Cancer</span><br>A Mechanistic Convergence Map of Multi-Pathway Interventions</h1>
+    <p class="header-subtitle">Each node represents a key oncogenic driver. Drug labels denote repositioned agents with evidence-based mechanistic activity across Cancer Stem Cell, Cell Cycle, ECM/TME, Metabolism, Immune Modulation, and Angiogenesis pathways. Click a drug button to highlight all nodes where it acts.</p>
+  </div>
+
+  <!-- DRUG FILTER BAR -->
+  <div class="filter-bar">
+    <div class="filter-bar-label">Highlight drug across all targets →</div>
+    <button class="drug-btn" onclick="highlight('Niclosamide')">Niclosamide</button>
+    <button class="drug-btn" onclick="highlight('Metformin')">Metformin</button>
+    <button class="drug-btn" onclick="highlight('Statins')">Statins</button>
+    <button class="drug-btn" onclick="highlight('Ivermectin')">Ivermectin</button>
+    <button class="drug-btn" onclick="highlight('Mebendazole')">Mebendazole</button>
+    <button class="drug-btn" onclick="highlight('Fenbendazole')">Fenbendazole</button>
+    <button class="drug-btn" onclick="highlight('Aspirin')">Aspirin</button>
+    <button class="drug-btn" onclick="highlight('Curcumin')">Curcumin</button>
+    <button class="drug-btn" onclick="highlight('Berberine')">Berberine</button>
+    <button class="drug-btn" onclick="highlight('Atorvastatin')">Atorvastatin</button>
+    <button class="drug-btn" onclick="highlight('Doxycycline')">Doxycycline</button>
+    <button class="drug-btn" onclick="highlight('Sulfasalazine')">Sulfasalazine</button>
+    <button class="drug-btn" onclick="highlight('Hydroxychloroquine')">Hydroxychloroquine</button>
+    <button class="drug-btn reset-btn" onclick="resetAll()">✕ Clear</button>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-wrap">
+    <svg id="metro" viewBox="0 0 980 720" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- ════ TRACK LINES ════ -->
+
+    <!-- PURPLE: Cancer Stem Cells — left vertical spine -->
+    <line x1="100" y1="72" x2="100" y2="510" stroke="#8B5CF6" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- RED: Cell Cycle — horizontal top band -->
+    <line x1="100" y1="100" x2="650" y2="100" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- GREEN: ECM & TME — angled + right vertical -->
+    <polyline points="650,100 860,240 860,600" fill="none" stroke="#10B981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- BLUE: Metabolism — horizontal mid -->
+    <line x1="100" y1="300" x2="860" y2="300" stroke="#3B82F6" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- ORANGE: Immune Modulation — lower horizontal -->
+    <line x1="100" y1="420" x2="860" y2="420" stroke="#F59E0B" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- YELLOW: Angiogenesis — bottom horizontal -->
+    <line x1="100" y1="540" x2="860" y2="540" stroke="#EAB308" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- ════ CROSS-PATHWAY DASHED ARROWS ════ -->
+    <!-- ECM Invasion → Metabolism -->
+    <line x1="860" y1="320" x2="860" y2="395" stroke="#10B981" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+    <!-- Metabolism → Immune -->
+    <line x1="650" y1="315" x2="650" y2="400" stroke="#F59E0B" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+    <!-- Cell Cycle → Angiogenesis -->
+    <line x1="460" y1="115" x2="460" y2="523" stroke="#EAB308" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+    <!-- CSC → Immune (left side) -->
+    <line x1="100" y1="465" x2="100" y2="502" stroke="#F59E0B" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+    <!-- Metabolism → Angiogenesis mid -->
+    <line x1="300" y1="315" x2="300" y2="523" stroke="#EAB308" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+
+    <!-- cross labels -->
+    <text class="jxn-lbl" x="878" y="360">ECM→Invasion</text>
+    <text class="jxn-lbl" x="670" y="358">Met→Immune</text>
+    <text class="jxn-lbl" x="480" y="320">CC→Angio</text>
+    <text class="jxn-lbl" x="120" y="483">CSC→Immune</text>
+
+    <!-- ════ NODES ════ -->
+
+    <!-- ── PURPLE: Cancer Stem Cells ── -->
+    <!-- Wnt -->
+    <g class="nd" data-drugs="Niclosamide" id="nd-wnt">
+      <rect x="34" y="56" width="132" height="44" rx="9" fill="#7C3AED"/>
+      <text class="nt" x="100" y="73">Wnt signaling</text>
+      <text class="nd2" x="100" y="89">Niclosamide</text>
+    </g>
+    <!-- Notch -->
+    <g class="nd" data-drugs="Metformin" id="nd-notch">
+      <rect x="34" y="148" width="132" height="44" rx="9" fill="#7C3AED"/>
+      <text class="nt" x="100" y="165">Notch</text>
+      <text class="nd2" x="100" y="181">Metformin</text>
+    </g>
+    <!-- Hedgehog -->
+    <g class="nd" data-drugs="Statins" id="nd-hh">
+      <rect x="34" y="224" width="132" height="44" rx="9" fill="#7C3AED"/>
+      <text class="nt" x="100" y="241">Hedgehog</text>
+      <text class="nd2" x="100" y="257">Statins</text>
+    </g>
+    <!-- YAP/TAZ -->
+    <g class="nd" data-drugs="Ivermectin" id="nd-yap">
+      <rect x="34" y="348" width="132" height="44" rx="9" fill="#6D28D9"/>
+      <text class="nt" x="100" y="365">YAP / TAZ</text>
+      <text class="nd2" x="100" y="381">Ivermectin</text>
+    </g>
+    <!-- Self-Renewal -->
+    <g class="nd" data-drugs="Niclosamide,Ivermectin,Metformin" id="nd-sr">
+      <rect x="20" y="468" width="160" height="54" rx="9" fill="#5B21B6"/>
+      <text class="nt" x="100" y="486">Self-Renewal Hub</text>
+      <text class="nd2" x="100" y="502">Niclosamide · Ivermectin</text>
+      <text class="nd2" x="100" y="514">Metformin</text>
+    </g>
+
+    <!-- ── RED: Cell Cycle ── -->
+    <!-- p53 Loss -->
+    <g class="nd" data-drugs="Mebendazole,Fenbendazole" id="nd-p53">
+      <rect x="176" y="78" width="160" height="44" rx="9" fill="#EF4444"/>
+      <text class="nt" x="256" y="95">p53 Loss</text>
+      <text class="nd2" x="256" y="111">Mebendazole · Fenbendazole</text>
+    </g>
+    <!-- Cell Division -->
+    <g class="nd" data-drugs="Mebendazole,Fenbendazole,Aspirin,Sulfasalazine" id="nd-div">
+      <rect x="380" y="78" width="168" height="44" rx="9" fill="#EF4444"/>
+      <text class="nt" x="464" y="95">Cell Division</text>
+      <text class="nd2" x="464" y="111">Mebendazole · Aspirin · Sulfasalazine</text>
+    </g>
+    <!-- RB Pathway -->
+    <g class="nd" data-drugs="Mebendazole,Fenbendazole" id="nd-rb">
+      <rect x="586" y="78" width="140" height="44" rx="9" fill="#B91C1C"/>
+      <text class="nt" x="656" y="95">RB Pathway</text>
+      <text class="nd2" x="656" y="111">Mebendazole · Fenbendazole</text>
+    </g>
+
+    <!-- ── GREEN: ECM & TME ── -->
+    <!-- TGF-β -->
+    <g class="nd" data-drugs="Niclosamide,Curcumin" id="nd-tgf">
+      <rect x="790" y="150" width="140" height="44" rx="9" fill="#10B981"/>
+      <text class="nt" x="860" y="167">TGF-β</text>
+      <text class="nd2" x="860" y="183">Niclosamide · Curcumin</text>
+    </g>
+    <!-- Tumor Invasion -->
+    <g class="nd" data-drugs="Niclosamide,Ivermectin,Doxycycline,Mebendazole" id="nd-inv">
+      <rect x="776" y="248" width="168" height="48" rx="9" fill="#059669"/>
+      <text class="nt" x="860" y="265">Tumor Invasion</text>
+      <text class="nd2" x="860" y="281">Niclosamide · Ivermectin</text>
+      <text class="nd2" x="860" y="292">Doxycycline · Mebendazole</text>
+    </g>
+    <!-- LOX -->
+    <g class="nd" data-drugs="Niclosamide,Atorvastatin" id="nd-lox">
+      <rect x="790" y="348" width="140" height="44" rx="9" fill="#047857"/>
+      <text class="nt" x="860" y="365">LOX (crosslinking)</text>
+      <text class="nd2" x="860" y="381">Niclosamide · Atorvastatin</text>
+    </g>
+    <!-- Collagen -->
+    <g class="nd" data-drugs="Metformin,Atorvastatin" id="nd-col">
+      <rect x="790" y="458" width="140" height="44" rx="9" fill="#10B981"/>
+      <text class="nt" x="860" y="475">Collagen Remodeling</text>
+      <text class="nd2" x="860" y="491">Metformin · Atorvastatin</text>
+    </g>
+    <!-- MMPs -->
+    <g class="nd" data-drugs="Doxycycline" id="nd-mmp">
+      <rect x="790" y="558" width="140" height="44" rx="9" fill="#047857"/>
+      <text class="nt" x="860" y="575">MMPs</text>
+      <text class="nd2" x="860" y="591">Doxycycline</text>
+    </g>
+
+    <!-- ── BLUE: Metabolism ── -->
+    <!-- Glycolysis / Glutamine / OXPHOS -->
+    <g class="nd" data-drugs="Metformin,Berberine" id="nd-gly">
+      <rect x="134" y="278" width="180" height="44" rx="9" fill="#3B82F6"/>
+      <text class="nt" x="224" y="295">Glycolysis / OXPHOS</text>
+      <text class="nd2" x="224" y="311">Metformin · Berberine</text>
+    </g>
+    <!-- Lipids -->
+    <g class="nd" data-drugs="Atorvastatin" id="nd-lip">
+      <rect x="376" y="278" width="140" height="44" rx="9" fill="#2563EB"/>
+      <text class="nt" x="446" y="295">Lipid Synthesis</text>
+      <text class="nd2" x="446" y="311">Atorvastatin</text>
+    </g>
+    <!-- Energy Supply -->
+    <g class="nd" data-drugs="Metformin,Berberine" id="nd-ene">
+      <rect x="578" y="278" width="140" height="44" rx="9" fill="#1D4ED8"/>
+      <text class="nt" x="648" y="295">Energy Supply</text>
+      <text class="nd2" x="648" y="311">Metformin · Berberine</text>
+    </g>
+
+    <!-- ── ORANGE: Immune Modulation ── -->
+    <!-- Checkpoint / Tregs / Macrophages -->
+    <g class="nd" data-drugs="Sulfasalazine,Ivermectin,Curcumin,Hydroxychloroquine" id="nd-chk">
+      <rect x="120" y="398" width="200" height="54" rx="9" fill="#D97706"/>
+      <text class="nt" x="220" y="416">Checkpoint / Tregs</text>
+      <text class="nd2" x="220" y="432">Sulfasalazine · Ivermectin</text>
+      <text class="nd2" x="220" y="444">Curcumin · HCQ</text>
+    </g>
+    <!-- Immune Response -->
+    <g class="nd" data-drugs="Niclosamide" id="nd-imr">
+      <rect x="376" y="400" width="160" height="44" rx="9" fill="#B45309"/>
+      <text class="nt" x="456" y="417">Immune Response</text>
+      <text class="nd2" x="456" y="433">Niclosamide</text>
+    </g>
+    <!-- Macrophage Polarization -->
+    <g class="nd" data-drugs="Sulfasalazine,Curcumin,Hydroxychloroquine" id="nd-mac">
+      <rect x="590" y="398" width="192" height="54" rx="9" fill="#D97706"/>
+      <text class="nt" x="686" y="416">Macrophage Polarization</text>
+      <text class="nd2" x="686" y="432">Sulfasalazine · Curcumin</text>
+      <text class="nd2" x="686" y="444">Hydroxychloroquine</text>
+    </g>
+
+    <!-- ── YELLOW: Angiogenesis ── -->
+    <!-- VEGF / HIF-1α -->
+    <g class="nd" data-drugs="Mebendazole,Fenbendazole,Metformin" id="nd-vegf">
+      <rect x="120" y="520" width="180" height="44" rx="9" fill="#CA8A04"/>
+      <text class="nt" x="210" y="537">VEGF / HIF-1α</text>
+      <text class="nd2" x="210" y="553">Mebendazole · Fenbendazole · Metformin</text>
+    </g>
+    <!-- Blood Vessels -->
+    <g class="nd" data-drugs="Statins,Curcumin" id="nd-bv">
+      <rect x="360" y="520" width="160" height="44" rx="9" fill="#CA8A04"/>
+      <text class="nt" x="440" y="537">Blood Vessels</text>
+      <text class="nd2" x="440" y="553">Statins · Curcumin</text>
+    </g>
+    <!-- Neovascularization -->
+    <g class="nd" data-drugs="Fenbendazole,Statins" id="nd-neo">
+      <rect x="584" y="520" width="184" height="44" rx="9" fill="#A16207"/>
+      <text class="nt" x="676" y="537">Neovascularization</text>
+      <text class="nd2" x="676" y="553">Fenbendazole · Statins</text>
+    </g>
+
+    <!-- ════ JUNCTION INTERCHANGE CIRCLES ════ -->
+    <!-- purple × red -->
+    <circle cx="100" cy="100" r="9" fill="#0B1628" stroke="#EF4444" stroke-width="2.5"/>
+    <circle cx="100" cy="100" r="4" fill="#8B5CF6"/>
+    <!-- red × green -->
+    <circle cx="650" cy="100" r="9" fill="#0B1628" stroke="#EF4444" stroke-width="2.5"/>
+    <circle cx="650" cy="100" r="4" fill="#10B981"/>
+    <!-- blue × all right -->
+    <circle cx="860" cy="300" r="9" fill="#0B1628" stroke="#3B82F6" stroke-width="2.5"/>
+    <circle cx="860" cy="300" r="4" fill="#10B981"/>
+    <!-- orange left -->
+    <circle cx="100" cy="420" r="9" fill="#0B1628" stroke="#F59E0B" stroke-width="2.5"/>
+    <circle cx="100" cy="420" r="4" fill="#8B5CF6"/>
+    <!-- angio left -->
+    <circle cx="100" cy="540" r="9" fill="#0B1628" stroke="#EAB308" stroke-width="2.5"/>
+    <!-- orange right -->
+    <circle cx="860" cy="420" r="9" fill="#0B1628" stroke="#F59E0B" stroke-width="2.5"/>
+    <circle cx="860" cy="420" r="4" fill="#10B981"/>
+    <!-- angio right -->
+    <circle cx="860" cy="540" r="9" fill="#0B1628" stroke="#EAB308" stroke-width="2.5"/>
+    <circle cx="860" cy="540" r="4" fill="#10B981"/>
+    <!-- blue mid  -->
+    <circle cx="650" cy="300" r="9" fill="#0B1628" stroke="#3B82F6" stroke-width="2.5"/>
+
+    <!-- ════ PATHWAY ROTATED LABELS ════ -->
+    <text class="section-lbl" x="18" y="290" transform="rotate(-90,18,290)" fill="#8B5CF6" text-anchor="middle" font-size="9">CANCER STEM CELLS</text>
+    <text class="section-lbl" x="380" y="55" fill="#EF4444" text-anchor="middle" font-size="9">CELL CYCLE</text>
+    <text class="section-lbl" x="940" y="350" transform="rotate(90,940,350)" fill="#10B981" text-anchor="middle" font-size="9">ECM &amp; TME</text>
+    <text class="section-lbl" x="500" y="268" fill="#3B82F6" text-anchor="middle" font-size="9">METABOLISM</text>
+    <text class="section-lbl" x="500" y="390" fill="#F59E0B" text-anchor="middle" font-size="9">IMMUNE MODULATION</text>
+    <text class="section-lbl" x="500" y="510" fill="#EAB308" text-anchor="middle" font-size="9">ANGIOGENESIS</text>
+
+    </svg>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#8B5CF6"></div>Cancer Stem Cells</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#EF4444"></div>Cell Cycle</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#10B981"></div>ECM &amp; TME</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#3B82F6"></div>Metabolism</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#F59E0B"></div>Immune Modulation</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#EAB308"></div>Angiogenesis</div>
+    <div class="legend-item"><div class="legend-dashed"></div>Cross-pathway interaction</div>
+    <div class="legend-item" style="color:#5C6B80">HCQ = Hydroxychloroquine</div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Mechanistic Convergence Map · Integrative Oncology · Drug Repurposing Reference Figure<br>
+    For educational and clinical discussion purposes. Each agent shown has peer-reviewed mechanistic evidence at the indicated target.
+  </div>
+
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+  const drugMap = {
+    'Niclosamide': ['nd-wnt','nd-tgf','nd-lox','nd-inv','nd-imr','nd-sr'],
+    'Metformin':   ['nd-notch','nd-gly','nd-ene','nd-col','nd-vegf','nd-sr'],
+    'Statins':     ['nd-hh','nd-bv','nd-neo'],
+    'Ivermectin':  ['nd-yap','nd-inv','nd-chk','nd-sr'],
+    'Mebendazole': ['nd-p53','nd-div','nd-rb','nd-inv','nd-vegf'],
+    'Fenbendazole':['nd-p53','nd-rb','nd-vegf','nd-neo'],
+    'Aspirin':     ['nd-div'],
+    'Sulfasalazine':['nd-div','nd-chk','nd-mac'],
+    'Curcumin':    ['nd-tgf','nd-bv','nd-chk','nd-mac'],
+    'Berberine':   ['nd-gly','nd-ene'],
+    'Atorvastatin':['nd-lip','nd-lox','nd-col'],
+    'Doxycycline': ['nd-mmp','nd-inv'],
+    'Hydroxychloroquine':['nd-chk','nd-mac']
+  };
+
+  const nodeInfo = {
+    'nd-wnt':  { title:'Wnt Signaling', drugs:'Niclosamide', pathway:'Cancer Stem Cells' },
+    'nd-notch':{ title:'Notch Pathway', drugs:'Metformin', pathway:'Cancer Stem Cells' },
+    'nd-hh':   { title:'Hedgehog Pathway', drugs:'Statins', pathway:'Cancer Stem Cells' },
+    'nd-yap':  { title:'YAP / TAZ', drugs:'Ivermectin', pathway:'Cancer Stem Cells' },
+    'nd-sr':   { title:'Self-Renewal Hub', drugs:'Niclosamide, Ivermectin, Metformin', pathway:'Cancer Stem Cells' },
+    'nd-p53':  { title:'p53 Loss', drugs:'Mebendazole, Fenbendazole', pathway:'Cell Cycle' },
+    'nd-div':  { title:'Cell Division', drugs:'Mebendazole, Fenbendazole, Aspirin, Sulfasalazine', pathway:'Cell Cycle' },
+    'nd-rb':   { title:'RB Pathway', drugs:'Mebendazole, Fenbendazole', pathway:'Cell Cycle' },
+    'nd-tgf':  { title:'TGF-β', drugs:'Niclosamide, Curcumin', pathway:'ECM & TME' },
+    'nd-inv':  { title:'Tumor Invasion', drugs:'Niclosamide, Ivermectin, Doxycycline, Mebendazole', pathway:'ECM & TME' },
+    'nd-lox':  { title:'LOX (Crosslinking)', drugs:'Niclosamide, Atorvastatin', pathway:'ECM & TME' },
+    'nd-col':  { title:'Collagen Remodeling', drugs:'Metformin, Atorvastatin', pathway:'ECM & TME' },
+    'nd-mmp':  { title:'MMPs', drugs:'Doxycycline', pathway:'ECM & TME' },
+    'nd-gly':  { title:'Glycolysis / Glutamine / OXPHOS', drugs:'Metformin, Berberine', pathway:'Metabolism' },
+    'nd-lip':  { title:'Lipid Synthesis', drugs:'Atorvastatin', pathway:'Metabolism' },
+    'nd-ene':  { title:'Energy Supply', drugs:'Metformin, Berberine', pathway:'Metabolism' },
+    'nd-chk':  { title:'Checkpoint / Tregs / Macrophages', drugs:'Sulfasalazine, Ivermectin, Curcumin, HCQ', pathway:'Immune Modulation' },
+    'nd-imr':  { title:'Immune Response', drugs:'Niclosamide', pathway:'Immune Modulation' },
+    'nd-mac':  { title:'Macrophage Polarization', drugs:'Sulfasalazine, Curcumin, HCQ', pathway:'Immune Modulation' },
+    'nd-vegf': { title:'VEGF / HIF-1α', drugs:'Mebendazole, Fenbendazole, Metformin', pathway:'Angiogenesis' },
+    'nd-bv':   { title:'Blood Vessels', drugs:'Statins, Curcumin', pathway:'Angiogenesis' },
+    'nd-neo':  { title:'Neovascularization', drugs:'Fenbendazole, Statins', pathway:'Angiogenesis' },
+  };
+
+  let activeDrug = null;
+  const tooltip = document.getElementById('tooltip');
+  const allNodes = document.querySelectorAll('.nd');
+
+  function highlight(drug) {
+    if (activeDrug === drug) { resetAll(); return; }
+    activeDrug = drug;
+    const targets = new Set(drugMap[drug] || []);
+    document.querySelectorAll('.drug-btn').forEach(b => {
+      b.classList.toggle('active', b.textContent.trim() === drug);
+    });
+    allNodes.forEach(nd => {
+      if (targets.has(nd.id)) {
+        nd.classList.remove('dimmed');
+        nd.classList.add('highlighted');
+      } else {
+        nd.classList.add('dimmed');
+        nd.classList.remove('highlighted');
+      }
+    });
+  }
+
+  function resetAll() {
+    activeDrug = null;
+    document.querySelectorAll('.drug-btn').forEach(b => b.classList.remove('active'));
+    allNodes.forEach(nd => { nd.classList.remove('dimmed','highlighted'); });
+  }
+
+  // Tooltip on hover
+  allNodes.forEach(nd => {
+    nd.addEventListener('mouseenter', (e) => {
+      const info = nodeInfo[nd.id];
+      if (!info) return;
+      tooltip.innerHTML = `<strong>${info.title}</strong><span style="color:#9BA8BB;font-size:10px">${info.pathway}</span><br><span style="color:#C9A84C;margin-top:4px;display:block">${info.drugs}</span>`;
+      tooltip.classList.add('show');
+    });
+    nd.addEventListener('mousemove', (e) => {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top  = (e.clientY - 10) + 'px';
+    });
+    nd.addEventListener('mouseleave', () => { tooltip.classList.remove('show'); });
+    nd.addEventListener('click', () => {
+      const info = nodeInfo[nd.id];
+      if (!info) return;
+      const drugs = nd.getAttribute('data-drugs').split(',');
+      if (drugs.length === 1) highlight(drugs[0].trim());
+    });
+  });
+</script>
+</body>
+</html>
